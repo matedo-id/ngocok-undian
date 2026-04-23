@@ -126,20 +126,49 @@ export default function EditorPage() {
               <label htmlFor="winner-count" className="text-sm text-slate-300 font-medium">
                 Jumlah Pemenang
               </label>
-              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                  setConfig({ winnerCount: Math.max(1, winnerCount - 1) })
+                  }
+                  disabled={winnerCount <= 1}
+                  aria-label="Kurangi jumlah pemenang"
+                  className="h-10 w-10 rounded-lg border border-slate-600 bg-slate-800 text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700"
+                >
+                  −
+                </button>
+
                 <input
                   id="winner-count"
-                  type="range"
+                  type="number"
                   min={1}
                   max={maxWinners}
                   value={winnerCount}
-                  onChange={(e) => setConfig({ winnerCount: Number(e.target.value) })}
-                  className="flex-1 accent-purple-500"
+                  onChange={(e) => {
+                  const value = Number(e.target.value);
+                  if (Number.isNaN(value)) return;
+                  setConfig({
+                    winnerCount: Math.min(maxWinners, Math.max(1, value)),
+                  });
+                  }}
+                  className="h-10 w-full rounded-lg border border-slate-600 bg-slate-900 px-3 text-center text-white font-semibold tabular-nums outline-none focus:ring-2 focus:ring-purple-500"
                 />
-                <span className="text-lg font-bold text-white w-8 text-center tabular-nums">
-                  {winnerCount}
-                </span>
-              </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                  setConfig({
+                    winnerCount: Math.min(maxWinners, winnerCount + 1),
+                  })
+                  }
+                  disabled={winnerCount >= maxWinners}
+                  aria-label="Tambah jumlah pemenang"
+                  className="h-10 w-10 rounded-lg border border-slate-600 bg-slate-800 text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700"
+                >
+                  +
+                </button>
+                </div>
               <span className="text-xs text-slate-500">
                 Maks. {maxWinners} pemenang dari {uniqueEntries.length} peserta
               </span>
