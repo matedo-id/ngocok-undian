@@ -1,65 +1,233 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Save, Link, Play, Dices } from "lucide-react";
+import { useEditorStore } from "@/store/useEditorStore";
+import { NameEditor } from "@/components/NameEditor";
+import { SavedListsPanel } from "@/components/SavedListsPanel";
+import { ShareDialog } from "@/components/ShareDialog";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Switch } from "@/components/ui/Switch";
+import { Dialog } from "@/components/ui/Dialog";
+
+export default function EditorPage() {
+  const router = useRouter();
+  const { entries, config, setConfig, saveList, loadFromStorage } = useEditorStore();
+
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [saveError, setSaveError] = useState("");
+
+  useEffect(() => {
+    loadFromStorage();
+  }, [loadFromStorage]);
+
+  const uniqueEntries = [...new Set(entries.filter(Boolean))];
+  const canStart = uniqueEntries.length >= 1;
+  const maxWinners = Math.max(1, uniqueEntries.length);
+  const winnerCount = Math.min(config.winnerCount, maxWinners);
+
+  function handleSave() {
+    if (!saveName.trim()) {
+      setSaveError("Nama list tidak boleh kosong.");
+      return;
+    }
+    saveList(saveName.trim());
+    setSaveDialogOpen(false);
+    setSaveName("");
+    setSaveError("");
+  }
+
+  function handleStart() {
+    if (!canStart) return;
+    router.push("/draw");
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen bg-[#0a0a0f] text-slate-100">
+      {/* Header */}
+      <header className="border-b border-slate-800 px-6 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-900/40">
+              <Dices size={20} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                Ngocok.id
+              </h1>
+              <p className="text-xs text-slate-500">Undian Nama Slot Machine</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSaveName("");
+                setSaveError("");
+                setSaveDialogOpen(true);
+              }}
+              disabled={uniqueEntries.length === 0}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              <Save size={15} />
+              Simpan
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShareDialogOpen(true)}
+              disabled={uniqueEntries.length === 0}
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              <Link size={15} />
+              Bagikan
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleStart}
+              disabled={!canStart}
+              aria-label="Mulai undian"
+            >
+              <Play size={15} />
+              Mulai Undian
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      </header>
+
+      {/* Main */}
+      <main className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+        {/* Left — Name Editor */}
+        <section className="flex flex-col gap-4">
+          <div>
+            <h2 className="text-base font-semibold text-slate-200 mb-1">Daftar Peserta</h2>
+            <p className="text-sm text-slate-500">
+              Masukkan nama satu per baris. Bisa paste langsung dari Excel atau CSV.
+            </p>
+          </div>
+          <div className="flex-1">
+            <NameEditor />
+          </div>
+        </section>
+
+        {/* Right — Config + Saved Lists */}
+        <aside className="flex flex-col gap-5">
+          {/* Config */}
+          <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 flex flex-col gap-5">
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              Konfigurasi Undian
+            </h2>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="winner-count" className="text-sm text-slate-300 font-medium">
+                Jumlah Pemenang
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  id="winner-count"
+                  type="range"
+                  min={1}
+                  max={maxWinners}
+                  value={winnerCount}
+                  onChange={(e) => setConfig({ winnerCount: Number(e.target.value) })}
+                  className="flex-1 accent-purple-500"
+                />
+                <span className="text-lg font-bold text-white w-8 text-center tabular-nums">
+                  {winnerCount}
+                </span>
+              </div>
+              <span className="text-xs text-slate-500">
+                Maks. {maxWinners} pemenang dari {uniqueEntries.length} peserta
+              </span>
+            </div>
+
+            <Switch
+              id="remove-after-draw"
+              checked={config.removeAfterDraw}
+              onChange={(v) => setConfig({ removeAfterDraw: v })}
+              label="Hapus nama setelah keluar"
+              description="Pemenang tidak bisa dipilih dua kali"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+            <Switch
+              id="sound-enabled"
+              checked={config.soundEnabled}
+              onChange={(v) => setConfig({ soundEnabled: v })}
+              label="Aktifkan suara"
+              description="Efek suara saat spin dan menang"
+            />
+
+            <Button
+              variant="primary"
+              size="lg"
+              className="w-full"
+              onClick={handleStart}
+              disabled={!canStart}
+              aria-label="Mulai undian"
+            >
+              <Play size={16} />
+              Mulai Undian
+            </Button>
+
+            {!canStart && (
+              <p className="text-xs text-slate-500 text-center -mt-2">
+                Tambahkan minimal 1 nama untuk memulai
+              </p>
+            )}
+          </div>
+
+          {/* Saved Lists */}
+          <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 flex flex-col gap-4">
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              List Tersimpan
+            </h2>
+            <SavedListsPanel />
+          </div>
+        </aside>
       </main>
+
+      {/* Save Dialog */}
+      <Dialog
+        open={saveDialogOpen}
+        onClose={() => setSaveDialogOpen(false)}
+        title="Simpan Daftar Nama"
+      >
+        <div className="flex flex-col gap-4">
+          <Input
+            id="list-name"
+            label="Nama list"
+            placeholder="Contoh: Peserta Rapat Q1 2026"
+            value={saveName}
+            onChange={(e) => {
+              setSaveName(e.target.value);
+              setSaveError("");
+            }}
+            error={saveError}
+            autoFocus
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
+          />
+          <div className="flex gap-2 justify-end">
+            <Button variant="ghost" onClick={() => setSaveDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button variant="primary" onClick={handleSave}>
+              <Save size={15} />
+              Simpan
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Share Dialog */}
+      <ShareDialog
+        open={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        payload={{ entries: uniqueEntries, config, title: "Ngocok.id" }}
+      />
     </div>
   );
 }
