@@ -260,7 +260,7 @@ export function SlotReel({
             style={{ maxWidth: reelW }}
           >
             <p className="text-xs font-semibold text-purple-400 uppercase tracking-widest mb-0.5">
-              Pemenang #{index + 1}
+              Terpilih #{index + 1}
             </p>
             <p
               className="font-bold text-white leading-tight truncate"

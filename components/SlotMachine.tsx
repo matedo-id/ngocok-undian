@@ -87,6 +87,41 @@ export function SlotMachine({ large = false }: SlotMachineProps) {
 
   return (
     <div className="flex flex-col items-center gap-8 w-full">
+    <span className="slot-machine-responsive-anchor sr-only" aria-hidden="true" />
+
+    <style jsx>{`
+      .slot-machine-responsive-anchor + div > div:nth-of-type(3) {
+        display: grid !important;
+        grid-template-columns: repeat(1, minmax(0, max-content));
+        justify-content: center;
+        max-width: none !important;
+        width: 100%;
+      }
+
+      @media (min-width: 640px) {
+        .slot-machine-responsive-anchor + div > div:nth-of-type(3) {
+      grid-template-columns: repeat(2, minmax(0, max-content));
+        }
+      }
+
+      @media (min-width: 768px) {
+        .slot-machine-responsive-anchor + div > div:nth-of-type(3) {
+      grid-template-columns: repeat(3, minmax(0, max-content));
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .slot-machine-responsive-anchor + div > div:nth-of-type(3) {
+      grid-template-columns: repeat(4, minmax(0, max-content));
+        }
+      }
+
+      @media (min-width: 1280px) {
+        .slot-machine-responsive-anchor + div > div:nth-of-type(3) {
+      grid-template-columns: repeat(5, minmax(0, max-content));
+        }
+      }
+    `}</style>
 
       {/* ── Machine cabinet ── */}
       <div
