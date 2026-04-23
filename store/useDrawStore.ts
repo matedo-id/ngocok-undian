@@ -18,13 +18,18 @@ type DrawState = {
   config: DrawConfig;
   reels: Reel[];
   isSpinning: boolean;
+  sourceListId: string | null;
+  /** Names already committed for removal this session (to toggle button state). */
+  removedNames: string[];
 
-  initialize: (entries: string[], config: DrawConfig) => void;
+  initialize: (entries: string[], config: DrawConfig, sourceListId?: string | null) => void;
   spin: () => void;
   stopReel: (id: number) => void;
   reroll: (id: number) => boolean; // returns false if pool is empty
   getRerollPoolSize: (id: number) => number;
   resetDraw: () => void;
+  /** Remove current winners from the pool. Returns names actually removed. */
+  commitWinnerRemoval: () => string[];
 };
 
 export const useDrawStore = create<DrawState>((set, get) => ({
@@ -33,14 +38,24 @@ export const useDrawStore = create<DrawState>((set, get) => ({
   config: { winnerCount: 1, removeAfterDraw: false, soundEnabled: true },
   reels: [],
   isSpinning: false,
+  sourceListId: null,
+  removedNames: [],
 
-  initialize(entries, config) {
+  initialize(entries, config, sourceListId = null) {
     const reels: Reel[] = Array.from({ length: config.winnerCount }, (_, i) => ({
       id: i,
       winner: null,
       state: "idle",
     }));
-    set({ entries, remainingEntries: [...entries], config, reels, isSpinning: false });
+    set({
+      entries,
+      remainingEntries: [...entries],
+      config,
+      reels,
+      isSpinning: false,
+      sourceListId,
+      removedNames: [],
+    });
   },
 
   spin() {
@@ -136,5 +151,29 @@ export const useDrawStore = create<DrawState>((set, get) => ({
       state: "idle",
     }));
     set({ reels, isSpinning: false, remainingEntries: [...entries] });
+  },
+
+  commitWinnerRemoval() {
+    const { reels, entries, remainingEntries, removedNames } = get();
+    const winners = reels
+      .map((r) => r.winner)
+      .filter((w): w is string => w !== null);
+
+    if (winners.length === 0) return [];
+
+    const newlyRemoved = winners.filter((w) => !removedNames.includes(w));
+    if (newlyRemoved.length === 0) return [];
+
+    const removeSet = new Set(newlyRemoved);
+    const nextEntries = entries.filter((e) => !removeSet.has(e));
+    const nextRemaining = remainingEntries.filter((e) => !removeSet.has(e));
+
+    set({
+      entries: nextEntries,
+      remainingEntries: nextRemaining,
+      removedNames: [...removedNames, ...newlyRemoved],
+    });
+
+    return newlyRemoved;
   },
 }));

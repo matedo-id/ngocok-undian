@@ -32,7 +32,11 @@ function DrawPageInner() {
 
     // Fall back to editor store — load from localStorage first
     useEditorStore.getState().loadFromStorage();
-    const { entries: editorEntries, config: editorConfig } = useEditorStore.getState();
+    const {
+      entries: editorEntries,
+      config: editorConfig,
+      activeListId,
+    } = useEditorStore.getState();
     const uniqueEntries = [...new Set(editorEntries.filter(Boolean))];
 
     if (uniqueEntries.length === 0) {
@@ -40,7 +44,7 @@ function DrawPageInner() {
       return;
     }
 
-    initialize(uniqueEntries, editorConfig);
+    initialize(uniqueEntries, editorConfig, activeListId);
     setReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

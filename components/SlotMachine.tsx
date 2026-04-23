@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Trash2, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDrawStore } from "@/store/useDrawStore";
+import { useEditorStore } from "@/store/useEditorStore";
 import { SlotReel } from "@/components/SlotReel";
 import { Button } from "@/components/ui/Button";
 import { useConfetti } from "@/hooks/useConfetti";
@@ -19,12 +20,15 @@ export function SlotMachine({ large = false }: SlotMachineProps) {
     entries,
     config,
     isSpinning,
+    removedNames,
     spin,
     stopReel,
     reroll,
     getRerollPoolSize,
     resetDraw,
+    commitWinnerRemoval,
   } = useDrawStore();
+  const applyEntryRemoval = useEditorStore((s) => s.applyEntryRemoval);
   const { fire: fireConfetti } = useConfetti();
 
   const [animatingCount, setAnimatingCount] = useState(0);
@@ -65,6 +69,20 @@ export function SlotMachine({ large = false }: SlotMachineProps) {
     setAnimatingCount(0);
     resetDraw();
   }
+
+  function handleRemoveWinners() {
+    const removed = commitWinnerRemoval();
+    if (removed.length > 0) applyEntryRemoval(removed);
+  }
+
+  const currentWinners = reels
+    .map((r) => r.winner)
+    .filter((w): w is string => w !== null);
+  const winnersAlreadyRemoved =
+    currentWinners.length > 0 &&
+    currentWinners.every((w) => removedNames.includes(w));
+  const showRemoveWinnersBtn =
+    config.removeAfterDraw && allSettled && currentWinners.length > 0;
 
   useEffect(() => {
     if (allSettled && hasSpunRef.current && !confettiFiredRef.current) {
@@ -212,7 +230,7 @@ export function SlotMachine({ large = false }: SlotMachineProps) {
           {spinLabel}
         </motion.button>
 
-        {/* Reset + status */}
+        {/* Post-spin actions: remove winners (if configured) + reset */}
         <AnimatePresence>
           {allSettled && (
             <motion.div
@@ -220,7 +238,40 @@ export function SlotMachine({ large = false }: SlotMachineProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.25 }}
+              className="flex flex-col items-center gap-2"
             >
+              {showRemoveWinnersBtn && (
+                <button
+                  type="button"
+                  onClick={handleRemoveWinners}
+                  disabled={winnersAlreadyRemoved}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500",
+                    winnersAlreadyRemoved
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 cursor-default"
+                      : "bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 hover:text-rose-200"
+                  )}
+                  aria-label={
+                    winnersAlreadyRemoved
+                      ? "Pemenang sudah dihapus dari daftar"
+                      : "Hapus pemenang dari daftar"
+                  }
+                >
+                  {winnersAlreadyRemoved ? (
+                    <>
+                      <CheckCircle2 size={14} />
+                      Pemenang dihapus dari daftar
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      Hapus Pemenang dari Daftar
+                    </>
+                  )}
+                </button>
+              )}
+
               <Button variant="ghost" size="sm" onClick={handleReset}>
                 <RotateCcw size={13} />
                 Reset undian
